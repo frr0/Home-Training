@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VeloTrain</string>
+    <string name="title_activity_main">VeloTrain</string>
+    <string name="package_name">com.velotrain.app</string>
+    <string name="custom_url_scheme">com.velotrain.app</string>
+</resources>

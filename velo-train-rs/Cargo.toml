@@ -1,0 +1,15 @@
+[package]
+name = "velo-train"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+btleplug = "0.13"
+uuid = { version = "1.10", features = ["v4"] }
+tokio = { version = "1.40", features = ["full"] }
+tokio-stream = "0.1"
+futures-util = "0.3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1.0"
+iced = { version = "0.13", features = ["tokio"] }

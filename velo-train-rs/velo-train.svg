@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Rect -->
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <rect width="252" height="252" x="2" y="2" rx="54" fill="none" stroke="#38bdf8" stroke-width="4" stroke-opacity="0.3"/>
+  
+  <!-- Bicycle / Trainer Wheels -->
+  <circle cx="76" cy="164" r="36" fill="none" stroke="#38bdf8" stroke-width="10"/>
+  <circle cx="180" cy="164" r="36" fill="none" stroke="#38bdf8" stroke-width="10"/>
+  <circle cx="128" cy="164" r="14" fill="#38bdf8"/>
+
+  <!-- Frame Geometry -->
+  <path d="M76 164 L128 164 L156 108 L104 108 Z" fill="none" stroke="#f1f5f9" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M128 164 L104 108" fill="none" stroke="#f1f5f9" stroke-width="10"/>
+  <path d="M156 108 L180 164" fill="none" stroke="#f1f5f9" stroke-width="10"/>
+  <path d="M156 108 L164 88 L176 88" fill="none" stroke="#38bdf8" stroke-width="10" stroke-linecap="round"/>
+  <path d="M96 92 L112 92" stroke="#facc15" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- Lightning Bolt (Wattage / Smart ERG) -->
+  <path d="M136 40 L118 72 L132 72 L120 102 L148 64 L134 64 Z" fill="#facc15"/>
+</svg>
