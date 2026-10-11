@@ -89,6 +89,24 @@ function createWindow() {
     });
   }
 
+  // Handle downloads (FIT files, workouts) saving directly to Downloads directory
+  mainWindow.webContents.session.on('will-download', (event, item) => {
+    const downloadsFolder = app.getPath('downloads');
+    const savePath = path.join(downloadsFolder, item.getFilename());
+    item.setSavePath(savePath);
+
+    item.once('done', (_event, state) => {
+      if (state === 'completed') {
+        dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'File .FIT Salvato',
+          message: `File salvato con successo in Downloads:\n${savePath}`,
+          buttons: ['OK'],
+        });
+      }
+    });
+  });
+
   // Keyboard shortcut F11 for fullscreen
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'F11' && input.type === 'keyDown') {

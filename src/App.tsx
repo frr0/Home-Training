@@ -7,6 +7,8 @@ import { BluetoothModal } from './components/BluetoothModal';
 import { WorkoutModal } from './components/WorkoutModal';
 import { SettingsModal } from './components/SettingsModal';
 import { SessionSummaryModal } from './components/SessionSummaryModal';
+import { FitDownloadCard } from './components/FitDownloadCard';
+import { createFitFileInfo } from './services/fit/fitGenerator';
 
 import {
   BluetoothDevicesState,
@@ -97,8 +99,15 @@ export const App: React.FC = () => {
   // Session recording state
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>('idle');
   const sessionStartTimeRef = useRef<Date | null>(null);
+  const sessionSecondsRef = useRef<number>(0);
   const samplesRef = useRef<TelemetrySample[]>([]);
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
+  const [fitFileInfo, setFitFileInfo] = useState<{
+    filename: string;
+    blobUrl: string;
+    sizeBytes: number;
+    base64Data: string;
+  } | null>(null);
 
   // Setup services callbacks on mount
   useEffect(() => {
@@ -190,39 +199,42 @@ export const App: React.FC = () => {
         // Work and calories
         const dt = 1; // 1 second
         const joules = power * dt;
-        const workKj = (telemetry.workKj || 0) + joules / 1000;
-        // Estimated kcal: Joules / (4184 * 0.24 metabolic efficiency)
-        const calories = (telemetry.calories || 0) + (power > 0 ? joules / (4184 * 0.24) : 0);
+
+        sessionSecondsRef.current += 1;
+        const currentElapsedSeconds = sessionSecondsRef.current;
 
         const curTarget = workoutEngineRef.current.calculateInstantaneousTargetWatts();
         const pZone = getPowerZoneNumber(power, settings.ftp);
         const hrZone = getHeartRateZoneInfo(heartRate, settings.maxHeartRate).zone;
 
-        const updatedTelemetry: TelemetryData = {
-          power,
-          power3s,
-          targetPower: curTarget,
-          cadence,
-          targetCadence: engineState.instantaneousTargetCadence,
-          heartRate,
-          speedKmh: Number(currentSpeedKmh.toFixed(1)),
-          speedMps: Number(currentSpeedMps.toFixed(2)),
-          speedMph: Number(currentSpeedMph.toFixed(1)),
-          trainerReportedSpeed: trainerSpeedRef.current,
-          distanceMeters: physics.totalDistanceMeters,
-          elapsedSeconds: telemetry.elapsedSeconds + 1,
-          powerZone: pZone,
-          hrZone,
-          calories: Math.round(calories),
-          workKj: Number(workKj.toFixed(1)),
-        };
+        setTelemetry((prev) => {
+          const workKj = (prev.workKj || 0) + joules / 1000;
+          const calories = (prev.calories || 0) + (power > 0 ? joules / (4184 * 0.24) : 0);
 
-        setTelemetry(updatedTelemetry);
+          return {
+            power,
+            power3s,
+            targetPower: curTarget,
+            cadence,
+            targetCadence: engineState.instantaneousTargetCadence,
+            heartRate,
+            speedKmh: Number(currentSpeedKmh.toFixed(1)),
+            speedMps: Number(currentSpeedMps.toFixed(2)),
+            speedMph: Number(currentSpeedMph.toFixed(1)),
+            trainerReportedSpeed: trainerSpeedRef.current,
+            distanceMeters: physics.totalDistanceMeters,
+            elapsedSeconds: currentElapsedSeconds,
+            powerZone: pZone,
+            hrZone,
+            calories: Math.round(calories),
+            workKj: Number(workKj.toFixed(1)),
+          };
+        });
 
         // Record sample for .FIT export
         samplesRef.current.push({
           timestamp: new Date(),
-          elapsedSeconds: updatedTelemetry.elapsedSeconds,
+          elapsedSeconds: currentElapsedSeconds,
           power,
           cadence,
           heartRate,
@@ -250,14 +262,16 @@ export const App: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [sessionStatus, settings, telemetry.calories, telemetry.workKj, engineState.instantaneousTargetCadence]);
+  }, [sessionStatus, settings, engineState.instantaneousTargetCadence]);
 
   // --- WORKOUT CONTROLS ---
   const handleStartSession = () => {
     sessionStartTimeRef.current = new Date();
+    sessionSecondsRef.current = 0;
     samplesRef.current = [];
     power30sHistoryRef.current = [];
     physicsEngineRef.current.reset(0);
+    setFitFileInfo(null);
 
     setTelemetry((prev) => ({
       ...prev,
@@ -288,7 +302,7 @@ export const App: React.FC = () => {
     const samples = samplesRef.current;
     const startTime = sessionStartTimeRef.current || new Date();
     const endTime = new Date();
-    const totalTimerTime = telemetry.elapsedSeconds;
+    const totalTimerTime = sessionSecondsRef.current;
     const totalElapsedTime = Math.max(
       totalTimerTime,
       Math.round((endTime.getTime() - startTime.getTime()) / 1000)
@@ -375,6 +389,12 @@ export const App: React.FC = () => {
     };
 
     setSessionSummary(summary);
+    try {
+      const fileInfo = createFitFileInfo(summary);
+      setFitFileInfo(fileInfo);
+    } catch (err) {
+      console.error('Failed to generate FIT file info:', err);
+    }
     setIsSummaryModalOpen(true);
   };
 
@@ -455,6 +475,19 @@ export const App: React.FC = () => {
               Exit Demo
             </button>
           </div>
+        )}
+
+        {/* FIT File Download Card (appears prominently when session is completed or stopped) */}
+        {fitFileInfo && sessionSummary && (
+          <FitDownloadCard
+            summary={sessionSummary}
+            fitBlobUrl={fitFileInfo.blobUrl}
+            fitFilename={fitFileInfo.filename}
+            fitSizeBytes={fitFileInfo.sizeBytes}
+            base64Data={fitFileInfo.base64Data}
+            onOpenSummaryModal={() => setIsSummaryModalOpen(true)}
+            onDismiss={() => setFitFileInfo(null)}
+          />
         )}
 
         {/* Current Interval Banner / Prompt (when workout is active) */}

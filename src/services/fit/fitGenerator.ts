@@ -115,25 +115,57 @@ export function generateFitFile(summary: SessionSummary): Uint8Array {
 }
 
 /**
- * Generates and triggers browser download of the .fit file
+ * Prepares the .FIT file data, blob URL, and base64 string for downloading or sharing
  */
-export function downloadFitFile(summary: SessionSummary, customFilename?: string): { filename: string; blobUrl: string } {
+export function createFitFileInfo(summary: SessionSummary, customFilename?: string): {
+  filename: string;
+  blobUrl: string;
+  sizeBytes: number;
+  base64Data: string;
+} {
   const fitData = generateFitFile(summary);
   const blob = new Blob([fitData], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
+  const blobUrl = URL.createObjectURL(blob);
 
   const pad = (n: number) => String(n).padStart(2, '0');
   const d = summary.startTime || new Date();
   const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
   const filename = customFilename || `VeloTrain_${dateStr}.fit`;
 
+  let binary = '';
+  const len = fitData.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(fitData[i]);
+  }
+  const base64Data = btoa(binary);
+
+  return {
+    filename,
+    blobUrl,
+    sizeBytes: fitData.byteLength,
+    base64Data,
+  };
+}
+
+/**
+ * Generates and triggers download of the .fit file across Web, AppImage, and Android
+ */
+export function downloadFitFile(summary: SessionSummary, customFilename?: string): { filename: string; blobUrl: string } {
+  const { filename, blobUrl, base64Data } = createFitFileInfo(summary, customFilename);
+
+  // If on Android with native bridge
+  if ((window as any).AndroidDownloader?.downloadBase64File) {
+    (window as any).AndroidDownloader.downloadBase64File(filename, base64Data);
+    return { filename, blobUrl };
+  }
+
   const link = document.createElement('a');
-  link.href = url;
+  link.href = blobUrl;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 
-  return { filename, blobUrl: url };
+  return { filename, blobUrl };
 }
 
