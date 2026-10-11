@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, Square, SkipBack, SkipForward, ArrowDown, ArrowUp } from 'lucide-react';
+import { Play, Pause, Square, SkipBack, SkipForward, ArrowDown, ArrowUp, Download } from 'lucide-react';
 import { SessionStatus } from '../types';
 
 interface WorkoutControlsProps {
@@ -14,6 +14,7 @@ interface WorkoutControlsProps {
   onSkipInterval: (forward: boolean) => void;
   onAdjustErgBias: (delta: number) => void;
   onAdjustManualWatts: (delta: number) => void;
+  onExportFit?: () => void;
 }
 
 export const WorkoutControls: React.FC<WorkoutControlsProps> = ({
@@ -28,19 +29,33 @@ export const WorkoutControls: React.FC<WorkoutControlsProps> = ({
   onSkipInterval,
   onAdjustErgBias,
   onAdjustManualWatts,
+  onExportFit,
 }) => {
   return (
     <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4">
       {/* 1. Main Action Buttons */}
-      <div className="flex items-center gap-3 w-full md:w-auto justify-center">
+      <div className="flex items-center gap-3 w-full md:w-auto justify-center flex-wrap">
         {status === 'idle' && (
-          <button
-            onClick={onStart}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95"
-          >
-            <Play className="w-5 h-5 fill-current" />
-            <span>START WORKOUT</span>
-          </button>
+          <>
+            <button
+              onClick={onStart}
+              className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95"
+            >
+              <Play className="w-5 h-5 fill-current" />
+              <span>START WORKOUT</span>
+            </button>
+
+            {onExportFit && (
+              <button
+                onClick={onExportFit}
+                className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-emerald-500/40 text-emerald-300 font-bold text-sm shadow-md shadow-emerald-500/10 transition-all transform active:scale-95"
+                title="Genera e scarica file .FIT Garmin per la sessione corrente o demo"
+              >
+                <Download className="w-4 h-4 stroke-[2.5]" />
+                <span>SCARICA .FIT</span>
+              </button>
+            )}
+          </>
         )}
 
         {status === 'running' && (

@@ -390,12 +390,69 @@ export const App: React.FC = () => {
 
     setSessionSummary(summary);
     try {
+      localStorage.setItem('velotrain_last_summary', JSON.stringify(summary));
+    } catch {
+      // ignore quota err
+    }
+    try {
       const fileInfo = createFitFileInfo(summary);
       setFitFileInfo(fileInfo);
     } catch (err) {
       console.error('Failed to generate FIT file info:', err);
     }
     setIsSummaryModalOpen(true);
+  };
+
+  const handleExportFit = () => {
+    let summaryToExport = sessionSummary;
+    if (!summaryToExport) {
+      const saved = localStorage.getItem('velotrain_last_summary');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          parsed.startTime = new Date(parsed.startTime);
+          parsed.endTime = new Date(parsed.endTime);
+          summaryToExport = parsed;
+        } catch (e) {
+          console.warn('Failed parsing saved summary', e);
+        }
+      }
+    }
+
+    if (!summaryToExport) {
+      // Demo test activity summary so the user can immediately test FIT export
+      const now = new Date();
+      const fifteenMinsAgo = new Date(now.getTime() - 15 * 60 * 1000);
+      summaryToExport = {
+        startTime: fifteenMinsAgo,
+        endTime: now,
+        totalElapsedTimeSeconds: 900,
+        totalTimerTimeSeconds: 900,
+        totalDistanceMeters: 7500,
+        avgPowerWatts: Math.round(settings.ftp * 0.75),
+        maxPowerWatts: Math.round(settings.ftp * 1.15),
+        normalizedPowerWatts: Math.round(settings.ftp * 0.78),
+        avgCadenceRpm: 88,
+        maxCadenceRpm: 104,
+        avgHeartRateBpm: 145,
+        maxHeartRateBpm: 168,
+        avgSpeedKmh: 30.0,
+        maxSpeedKmh: 37.5,
+        totalWorkKj: 170,
+        totalCaloriesKcal: 178,
+        trainingStressScore: 16,
+        intensityFactor: 0.78,
+        samples: [],
+      };
+    }
+
+    setSessionSummary(summaryToExport);
+    try {
+      const fileInfo = createFitFileInfo(summaryToExport);
+      setFitFileInfo(fileInfo);
+    } catch (err) {
+      console.error('Failed to generate FIT file:', err);
+    }
   };
 
   const handleSelectWorkout = (workout: ParsedWorkout | null) => {
@@ -454,6 +511,7 @@ export const App: React.FC = () => {
         onOpenBluetooth={() => setIsBluetoothModalOpen(true)}
         onOpenWorkout={() => setIsWorkoutModalOpen(true)}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
+        onExportFit={handleExportFit}
       />
 
       {/* Main Studio Cockpit Area */}
@@ -764,6 +822,7 @@ export const App: React.FC = () => {
           onSkipInterval={handleSkipInterval}
           onAdjustErgBias={handleAdjustErgBias}
           onAdjustManualWatts={handleAdjustManualWatts}
+          onExportFit={handleExportFit}
         />
       </main>
 
